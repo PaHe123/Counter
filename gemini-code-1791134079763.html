@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Trainingssteuerung</title>
+  
+  <!-- iOS WebApp Integration -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Training">
+  
+  <style>
+    :root {
+      --bg-color: #000000;
+      --card-bg: #1c1c1e;
+      --work-color: #30d158;
+      --set-rest-color: #ff9f0a;
+      --round-rest-color: #0a84ff;
+      --prepare-color: #bf5af2;
+      --text-color: #ffffff;
+      --muted-color: #8e8e93;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 100vh;
+      padding: 20px;
+      text-align: center;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    header h1 {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: var(--muted-color);
+    }
+
+    .lang-switch {
+      display: flex;
+      gap: 5px;
+      background: var(--card-bg);
+      padding: 4px;
+      border-radius: 8px;
+    }
+
+    .lang-btn {
+      background: none;
+      border: none;
+      color: var(--muted-color);
+      padding: 4px 8px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .lang-btn.active {
+      background: #3a3a3c;
+      color: #fff;
+    }
+
+    .settings {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 15px;
+      margin-bottom: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .setting-group-title {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted-color);
+      text-align: left;
+    }
+
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.95rem;
+    }
+
+    .setting-row input {
+      width: 90px;
+      padding: 6px;
+      border-radius: 8px;
+      border: 1px solid #3a3a3c;
+      background: #2c2c2e;
+      color: #fff;
+      font-size: 0.95rem;
+      text-align: center;
+    }
+
+    .display-card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 20px 15px;
+      transition: background-color 0.3s ease;
+      border: 2px solid transparent;
+    }
+
+    .display-card.mode-prepare {
+      border-color: var(--prepare-color);
+      background: #270933;
+    }
+
+    .display-card.mode-work {
+      border-color: var(--work-color);
+      background: #092b10;
+    }
+
+    .display-card.mode-set-rest {
+      border-color: var(--set-rest-color);
+      background: #332000;
+    }
+
+    .display-card.mode-round-rest {
+      border-color: var(--round-rest-color);
+      background: #031b33;
+    }
+
+    .status-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 5px;
+    }
+
+    .timer {
+      font-size: 4.2rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      margin: 2px 0;
+    }
+
+    .sub-info {
+      font-size: 1.1rem;
+      color: var(--muted-color);
+      display: flex;
+      justify-content: space-around;
+      margin: 8px 0;
+    }
+
+    .total-times {
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid #3a3a3c;
+      padding-top: 10px;
+      margin-top: 10px;
+      font-size: 0.9rem;
+      color: var(--muted-color);
+    }
+
+    .total-times span strong {
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-top: 15px;
+    }
+
+    button.btn-ctrl {
+      flex: 1;
+      padding: 16px;
+      border-radius: 14px;
+      border: none;
+      font-size: 1.2rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:active {
+      opacity: 0.7;
+    }
+
+    .btn-start { background-color: var(--work-color); color: #000; }
+    .btn-pause { background-color: #ff3b30; color: #fff; }
+    .btn-reset { background-color: #3a3a3c; color: #fff; }
+
+    input:disabled {
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1 id="appTitle">Trainingssteuerung</h1>
+    <div class="lang-switch">
+      <button class="lang-btn active" id="btnDe" onclick="setLanguage('de')">DE</button>
+      <button class="lang-btn" id="btnEn" onclick="setLanguage('en')">EN</button>
+    </div>
+  </header>
+
+  <!-- Einstellungen -->
+  <div class="settings" id="settingsBlock">
+    <div class="setting-group-title" id="lblGeneralGroup">Allgemein</div>
+    <div class="setting-row">
+      <label for="prepTime" id="lblPrepTime">Vorlaufzeit (mm:ss):</label>
+      <input type="text" id="prepTime" value="00:10" placeholder="00:10" pattern="[0-9]{2}:[0-9]{2}">
+    </div>
+
+    <div class="setting-group-title" id="lblRoundGroup">Runden-Einstellungen</div>
+    <div class="setting-row">
+      <label for="totalRounds" id="lblRounds">Anzahl Runden:</label>
+      <input type="number" id="totalRounds" value="2" min="1" max="99" step="1">
+    </div>
+    <div class="setting-row">
+      <label for="roundRestTime" id="lblRoundRest">Rundenpause (mm:ss):</label>
+      <input type="text" id="roundRestTime" value="00:30" placeholder="00:30" pattern="[0-9]{2}:[0-9]{2}">
+    </div>
+
+    <div class="setting-group-title" id="lblSetGroup">Übungssatz-Einstellungen</div>
+    <div class="setting-row">
+      <label for="setsPerRound" id="lblSets">Sätze pro Runde:</label>
+      <input type="number" id="setsPerRound" value="5" min="1" max="99" step="1">
+    </div>
+    <div class="setting-row">
+      <label for="workDurationTime" id="lblWorkDuration">Dauer Satz (mm:ss):</label>
+      <input type="text" id="workDurationTime" value="01:00" placeholder="01:00" pattern="[0-9]{2}:[0-9]{2}">
+    </div>
+    <div class="setting-row">
+      <label for="setRestTime" id="lblSetRest">Satzpause (mm:ss):</label>
+      <input type="text" id="setRestTime" value="00:15" placeholder="00:15" pattern="[0-9]{2}:[0-9]{2}">
+    </div>
+  </div>
+
+  <!-- Anzeige -->
+  <div class="display-card" id="displayCard">
+    <div class="status-title" id="statusTitle">BEREIT</div>
+    <div class="timer" id="timerDisplay">00:00</div>
+    
+    <div class="sub-info">
+      <span id="roundDisplay">Runde 1/2</span>
+      <span id="setDisplay">Satz 1/5</span>
+    </div>
+
+    <div class="total-times">
+      <div><span id="lblElapsed">Gesamt:</span> <strong id="elapsedDisplay">00:00</strong></div>
+      <div><span id="lblRemaining">Rest:</span> <strong id="remainingDisplay">00:00</strong></div>
+    </div>
+  </div>
+
+  <!-- Steuerung -->
+  <div class="controls">
+    <button class="btn-ctrl btn-start" id="startBtn" onclick="toggleTimer()">Start</button>
+    <button class="btn-ctrl btn-reset" id="resetBtn" onclick="resetTimer()">Reset</button>
+  </div>
+
+  <script>
+    const translations = {
+      de: {
+        appTitle: "Trainingssteuerung",
+        lblGeneralGroup: "Allgemein",
+        lblPrepTime: "Vorlaufzeit (mm:ss):",
+        lblRoundGroup: "Runden-Einstellungen",
+        lblRounds: "Anzahl Runden:",
+        lblRoundRest: "Rundenpause (mm:ss):",
+        lblSetGroup: "Übungssatz-Einstellungen",
+        lblSets: "Sätze pro Runde:",
+        lblWorkDuration: "Dauer Satz (mm:ss):",
+        lblSetRest: "Satzpause (mm:ss):",
+        statusReady: "BEREIT",
+        statusPrepare: "VORLAUFZEIT",
+        statusWork: "Übungssatz",
+        statusSetRest: "Satzpause",
+        statusRoundRest: "Rundenpause",
+        statusFinished: "WORKOUT BEENDET!",
+        btnStart: "Start",
+        btnPause: "Pause",
+        btnResume: "Weiter",
+        btnReset: "Reset",
+        lblElapsed: "Gesamt:",
+        lblRemaining: "Rest:",
+        roundPrefix: "Runde",
+        setPrefix: "Satz"
+      },
+      en: {
+        appTitle: "Workout Control",
+        lblGeneralGroup: "General",
+        lblPrepTime: "Warm-up / Prep (mm:ss):",
+        lblRoundGroup: "Round Settings",
+        lblRounds: "Total Rounds:",
+        lblRoundRest: "Round Rest (mm:ss):",
+        lblSetGroup: "Set Settings",
+        lblSets: "Sets per Round:",
+        lblWorkDuration: "Set Duration (mm:ss):",
+        lblSetRest: "Set Rest (mm:ss):",
+        statusReady: "READY",
+        statusPrepare: "PREPARATION",
+        statusWork: "Exercise Set",
+        statusSetRest: "Set Rest",
+        statusRoundRest: "Round Rest",
+        statusFinished: "WORKOUT FINISHED!",
+        btnStart: "Start",
+        btnPause: "Pause",
+        btnResume: "Resume",
+        btnReset: "Reset",
+        lblElapsed: "Total:",
+        lblRemaining: "Remaining:",
+        roundPrefix: "Round",
+        setPrefix: "Set"
+      }
+    };
+
+    let currentLang = 'de';
+
+    let currentPhase = 'PREPARE'; // PREPARE, WORK, SET_REST, ROUND_REST
+    let isRunning = false;
+    let timerInterval = null;
+    let wakeLock = null;
+
+    let prepSec = 10;
+    let totalRounds = 2;
+    let roundRestSec = 30;
+    
+    let setsPerRound = 5;
+    let workSec = 60;
+    let setRestSec = 15;
+
+    let currentRound = 1;
+    let currentSet = 1;
+    let timeRemaining = 0;
+
+    let totalWorkoutDurationSec = 0;
+    let totalElapsedSec = 0;
+
+    const timerDisplay = document.getElementById('timerDisplay');
+    const roundDisplay = document.getElementById('roundDisplay');
+    const setDisplay = document.getElementById('setDisplay');
+    const statusTitle = document.getElementById('statusTitle');
+    const displayCard = document.getElementById('displayCard');
+    const startBtn = document.getElementById('startBtn');
+    const elapsedDisplay = document.getElementById('elapsedDisplay');
+    const remainingDisplay = document.getElementById('remainingDisplay');
+
+    function playBeep(freq = 600, duration = 0.2) {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.frequency.value = freq;
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function formatTime(sec) {
+      const mins = Math.floor(sec / 60);
+      const secs = sec % 60;
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function parseTimeToSeconds(timeStr) {
+      if (!timeStr) return 0;
+      const parts = timeStr.split(':');
+      if (parts.length === 2) {
+        const mins = parseInt(parts[0], 10) || 0;
+        const secs = parseInt(parts[1], 10) || 0;
+        return (mins * 60) + secs;
+      }
+      return parseInt(timeStr, 10) || 0;
+    }
+
+    function setLanguage(lang) {
+      currentLang = lang;
+      document.getElementById('btnDe').classList.toggle('active', lang === 'de');
+      document.getElementById('btnEn').classList.toggle('active', lang === 'en');
+
+      const t = translations[lang];
+      document.getElementById('appTitle').textContent = t.appTitle;
+      document.getElementById('lblGeneralGroup').textContent = t.lblGeneralGroup;
+      document.getElementById('lblPrepTime').textContent = t.lblPrepTime;
+      document.getElementById('lblRoundGroup').textContent = t.lblRoundGroup;
+      document.getElementById('lblRounds').textContent = t.lblRounds;
+      document.getElementById('lblRoundRest').textContent = t.lblRoundRest;
+      document.getElementById('lblSetGroup').textContent = t.lblSetGroup;
+      document.getElementById('lblSets').textContent = t.lblSets;
+      document.getElementById('lblWorkDuration').textContent = t.lblWorkDuration;
+      document.getElementById('lblSetRest').textContent = t.lblSetRest;
+      document.getElementById('lblElapsed').textContent = t.lblElapsed;
+      document.getElementById('lblRemaining').textContent = t.lblRemaining;
+      document.getElementById('resetBtn').textContent = t.btnReset;
+
+      if (!isRunning && totalElapsedSec === 0) {
+        startBtn.textContent = t.btnStart;
+      } else if (isRunning) {
+        startBtn.textContent = t.btnPause;
+      } else {
+        startBtn.textContent = t.btnResume;
+      }
+
+      setCardPhaseUI();
+    }
+
+    async function requestWakeLock() {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+        }
+      } catch (err) {}
+    }
+
+    function releaseWakeLock() {
+      if (wakeLock !== null) {
+        wakeLock.release();
+        wakeLock = null;
+      }
+    }
+
+    function calculateTotalDuration() {
+      const setRestCount = Math.max(0, setsPerRound - 1);
+      const singleRoundSec = (setsPerRound * workSec) + (setRestCount * setRestSec);
+      
+      const roundRestCount = Math.max(0, totalRounds - 1);
+      const workoutSec = (totalRounds * singleRoundSec) + (roundRestCount * roundRestSec);
+      
+      return prepSec + workoutSec;
+    }
+
+    function readInputs() {
+      prepSec = parseTimeToSeconds(document.getElementById('prepTime').value);
+      totalRounds = parseInt(document.getElementById('totalRounds').value) || 1;
+      roundRestSec = parseTimeToSeconds(document.getElementById('roundRestTime').value);
+
+      setsPerRound = parseInt(document.getElementById('setsPerRound').value) || 1;
+      workSec = parseTimeToSeconds(document.getElementById('workDurationTime').value);
+      setRestSec = parseTimeToSeconds(document.getElementById('setRestTime').value);
+
+      totalWorkoutDurationSec = calculateTotalDuration();
+
+      if (!isRunning && totalElapsedSec === 0) {
+        timeRemaining = prepSec > 0 ? prepSec : workSec;
+        currentPhase = prepSec > 0 ? 'PREPARE' : 'WORK';
+        
+        timerDisplay.textContent = formatTime(timeRemaining);
+        elapsedDisplay.textContent = formatTime(0);
+        remainingDisplay.textContent = formatTime(totalWorkoutDurationSec);
+        
+        const t = translations[currentLang];
+        roundDisplay.textContent = `${t.roundPrefix} ${currentRound}/${totalRounds}`;
+        setDisplay.textContent = `${t.setPrefix} ${currentSet}/${setsPerRound}`;
+      }
+    }
+
+    ['prepTime', 'totalRounds', 'roundRestTime', 'setsPerRound', 'workDurationTime', 'setRestTime'].forEach(id => {
+      document.getElementById(id).addEventListener('change', readInputs);
+    });
+
+    function setInputsDisabled(disabled) {
+      ['prepTime', 'totalRounds', 'roundRestTime', 'setsPerRound', 'workDurationTime', 'setRestTime'].forEach(id => {
+        document.getElementById(id).disabled = disabled;
+      });
+    }
+
+    function setCardPhaseUI() {
+      const t = translations[currentLang];
+      displayCard.classList.remove('mode-prepare', 'mode-work', 'mode-set-rest', 'mode-round-rest');
+
+      if (!isRunning && totalElapsedSec === 0) {
+        statusTitle.textContent = t.statusReady;
+        statusTitle.style.color = "var(--text-color)";
+      } else if (currentPhase === 'PREPARE') {
+        displayCard.classList.add('mode-prepare');
+        statusTitle.textContent = t.statusPrepare;
+        statusTitle.style.color = "var(--prepare-color)";
+      } else if (currentPhase === 'WORK') {
+        displayCard.classList.add('mode-work');
+        statusTitle.textContent = t.statusWork;
+        statusTitle.style.color = "var(--work-color)";
+      } else if (currentPhase === 'SET_REST') {
+        displayCard.classList.add('mode-set-rest');
+        statusTitle.textContent = t.statusSetRest;
+        statusTitle.style.color = "var(--set-rest-color)";
+      } else if (currentPhase === 'ROUND_REST') {
+        displayCard.classList.add('mode-round-rest');
+        statusTitle.textContent = t.statusRoundRest;
+        statusTitle.style.color = "var(--round-rest-color)";
+      }
+
+      roundDisplay.textContent = `${t.roundPrefix} ${currentRound}/${totalRounds}`;
+      setDisplay.textContent = `${t.setPrefix} ${currentSet}/${setsPerRound}`;
+    }
+
+    function toggleTimer() {
+      if (isRunning) {
+        pauseTimer();
+      } else {
+        startTimer();
+      }
+    }
+
+    function startTimer() {
+      const t = translations[currentLang];
+      readInputs();
+      isRunning = true;
+      startBtn.textContent = t.btnPause;
+      startBtn.className = 'btn-ctrl btn-pause';
+      setInputsDisabled(true);
+
+      if (totalElapsedSec === 0) {
+        playBeep(600, 0.2);
+      }
+
+      setCardPhaseUI();
+      requestWakeLock();
+
+      timerInterval = setInterval(() => {
+        timeRemaining--;
+        totalElapsedSec++;
+
+        const totalRemainingSec = Math.max(0, totalWorkoutDurationSec - totalElapsedSec);
+        elapsedDisplay.textContent = formatTime(totalElapsedSec);
+        remainingDisplay.textContent = formatTime(totalRemainingSec);
+
+        // Akustische Signale für die letzten 3 Sekunden (3, 2, 1)
+        if (timeRemaining >= 1 && timeRemaining <= 3) {
+          playBeep(440, 0.15); // Kurzer Countdown-Ton
+        }
+
+        if (timeRemaining <= 0) {
+          nextPhase();
+        } else {
+          timerDisplay.textContent = formatTime(timeRemaining);
+        }
+      }, 1000);
+    }
+
+    function nextPhase() {
+      if (currentPhase === 'PREPARE') {
+        currentPhase = 'WORK';
+        timeRemaining = workSec;
+        playBeep(880, 0.4); // Start-Ton für den Satz (höher)
+      } else if (currentPhase === 'WORK') {
+        if (currentSet < setsPerRound) {
+          currentPhase = 'SET_REST';
+          timeRemaining = setRestSec;
+          playBeep(520, 0.3); // Ton für Satzpause
+        } else {
+          if (currentRound < totalRounds) {
+            currentPhase = 'ROUND_REST';
+            timeRemaining = roundRestSec;
+            playBeep(600, 0.4); // Ton für Rundenpause
+          } else {
+            finishWorkout();
+            return;
+          }
+        }
+      } else if (currentPhase === 'SET_REST') {
+        currentSet++;
+        currentPhase = 'WORK';
+        timeRemaining = workSec;
+        playBeep(880, 0.4); // Start-Ton neuer Satz
+      } else if (currentPhase === 'ROUND_REST') {
+        currentRound++;
+        currentSet = 1;
+        currentPhase = 'WORK';
+        timeRemaining = workSec;
+        playBeep(880, 0.5); // Start-Ton neue Runde
+      }
+
+      setCardPhaseUI();
+      timerDisplay.textContent = formatTime(timeRemaining);
+    }
+
+    function pauseTimer() {
+      const t = translations[currentLang];
+      isRunning = false;
+      clearInterval(timerInterval);
+      startBtn.textContent = t.btnResume;
+      startBtn.className = 'btn-ctrl btn-start';
+      releaseWakeLock();
+    }
+
+    function finishWorkout() {
+      const t = translations[currentLang];
+      pauseTimer();
+      statusTitle.textContent = t.statusFinished;
+      statusTitle.style.color = "var(--work-color)";
+      timerDisplay.textContent = "00:00";
+      remainingDisplay.textContent = "00:00";
+      displayCard.classList.remove('mode-prepare', 'mode-work', 'mode-set-rest', 'mode-round-rest');
+      playBeep(1000, 0.6); // Abschluss-Signal
+      releaseWakeLock();
+    }
+
+    function resetTimer() {
+      const t = translations[currentLang];
+      pauseTimer();
+      isRunning = false;
+      currentRound = 1;
+      currentSet = 1;
+      totalElapsedSec = 0;
+
+      displayCard.classList.remove('mode-prepare', 'mode-work', 'mode-set-rest', 'mode-round-rest');
+      statusTitle.textContent = t.statusReady;
+      statusTitle.style.color = 'var(--text-color)';
+      
+      setInputsDisabled(false);
+      readInputs();
+
+      startBtn.textContent = t.btnStart;
+      startBtn.className = 'btn-ctrl btn-start';
+      releaseWakeLock();
+    }
+
+    readInputs();
+  </script>
+</body>
+</html>
