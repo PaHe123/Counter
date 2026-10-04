@@ -444,7 +444,6 @@
       const roundRestCount = Math.max(0, totalRounds - 1);
       const workoutSec = (totalRounds * singleRoundSec) + (roundRestCount * roundRestSec);
       
-      // Inklusive Vorlaufzeit
       return prepSec + workoutSec;
     }
 
@@ -543,11 +542,12 @@
         elapsedDisplay.textContent = formatTime(totalElapsedSec);
         remainingDisplay.textContent = formatTime(totalRemainingSec);
 
-        if (timeRemaining <= 3 && timeRemaining > 0) {
-          playBeep(440, 0.1);
+        // Akustische Signale für die letzten 3 Sekunden (3, 2, 1)
+        if (timeRemaining >= 1 && timeRemaining <= 3) {
+          playBeep(440, 0.15); // Kurzer Countdown-Ton
         }
 
-        if (timeRemaining < 0) {
+        if (timeRemaining <= 0) {
           nextPhase();
         } else {
           timerDisplay.textContent = formatTime(timeRemaining);
@@ -559,17 +559,17 @@
       if (currentPhase === 'PREPARE') {
         currentPhase = 'WORK';
         timeRemaining = workSec;
-        playBeep(880, 0.4);
+        playBeep(880, 0.4); // Start-Ton für den Satz (höher)
       } else if (currentPhase === 'WORK') {
         if (currentSet < setsPerRound) {
           currentPhase = 'SET_REST';
           timeRemaining = setRestSec;
-          playBeep(520, 0.2);
+          playBeep(520, 0.3); // Ton für Satzpause
         } else {
           if (currentRound < totalRounds) {
             currentPhase = 'ROUND_REST';
             timeRemaining = roundRestSec;
-            playBeep(600, 0.3);
+            playBeep(600, 0.4); // Ton für Rundenpause
           } else {
             finishWorkout();
             return;
@@ -579,13 +579,13 @@
         currentSet++;
         currentPhase = 'WORK';
         timeRemaining = workSec;
-        playBeep(880, 0.4);
+        playBeep(880, 0.4); // Start-Ton neuer Satz
       } else if (currentPhase === 'ROUND_REST') {
         currentRound++;
         currentSet = 1;
         currentPhase = 'WORK';
         timeRemaining = workSec;
-        playBeep(880, 0.5);
+        playBeep(880, 0.5); // Start-Ton neue Runde
       }
 
       setCardPhaseUI();
@@ -609,7 +609,7 @@
       timerDisplay.textContent = "00:00";
       remainingDisplay.textContent = "00:00";
       displayCard.classList.remove('mode-prepare', 'mode-work', 'mode-set-rest', 'mode-round-rest');
-      playBeep(1000, 0.6);
+      playBeep(1000, 0.6); // Abschluss-Signal
       releaseWakeLock();
     }
 
