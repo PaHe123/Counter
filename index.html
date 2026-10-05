@@ -361,9 +361,21 @@
     const elapsedDisplay = document.getElementById('elapsedDisplay');
     const remainingDisplay = document.getElementById('remainingDisplay');
 
+    let audioCtx = null;
+    
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+    
     function playBeep(freq = 600, duration = 0.2) {
       try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        initAudio(); // Stellt sicher, dass das Audio-System aktiv ist
+        //const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.frequency.value = freq;
@@ -512,6 +524,7 @@
     }
 
     function toggleTimer() {
+      initAudio(); // Schaltet Audio für Safari direkt beim Klick frei
       if (isRunning) {
         pauseTimer();
       } else {
